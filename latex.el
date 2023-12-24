@@ -233,7 +233,8 @@ section."
                              ("subparagraph" 6))
   "List which elements is the names of the sections used by LaTeX.")
 
-(defvar-local LaTeX-section-menu nil)
+(defvar LaTeX-section-menu nil)
+(make-variable-buffer-local 'LaTeX-section-menu)
 
 (defun LaTeX-section-list-add-locally (sections &optional clean)
   "Add SECTIONS to `LaTeX-section-list'.
@@ -296,8 +297,10 @@ header is at the start of a line."
           "\\|" TeX-header-end
           "\\|" TeX-trailer-start))
 
-(defvar-local LaTeX-largest-level nil
+(defvar LaTeX-largest-level nil
   "Largest sectioning level with current document class.")
+
+(make-variable-buffer-local 'LaTeX-largest-level)
 
 (defun LaTeX-largest-level ()
   "Return largest sectioning level with current document class.
@@ -557,14 +560,16 @@ is non-nil and the current environment is \"document\"."
   :type 'string)
 (make-variable-buffer-local 'LaTeX-default-environment)
 
-(defvar-local LaTeX-default-document-environment nil
+(defvar LaTeX-default-document-environment nil
   "The default environment when creating new ones with
 `LaTeX-environment' and the current one is \"document\".  This
 variable overrides `LaTeX-default-environment'.")
+(make-variable-buffer-local 'LaTeX-default-document-environment)
 
-(defvar-local LaTeX-default-tabular-environment "tabular"
+(defvar LaTeX-default-tabular-environment "tabular"
   "The default tabular-like environment used when inserting a table env.
 Styles such as tabularx may set it according to their needs.")
+(make-variable-buffer-local 'LaTeX-default-tabular-environment)
 
 (defvar LaTeX-environment-history nil)
 
@@ -1946,7 +1951,7 @@ The input string may include LaTeX comments and newlines."
           (delete-char -1)))))
     opts))
 
-(defvar-local LaTeX-provided-class-options nil
+(defvar LaTeX-provided-class-options nil
   "Alist of options provided to LaTeX classes.
 For each element, the CAR is the name of the class, the CDR is
 the list of options provided to it.
@@ -1955,6 +1960,7 @@ For example, its value will be
   ((\"book\" \"a4paper\" \"11pt\" \"openany\" \"fleqn\")
    ...)
 See also `LaTeX-provided-package-options'.")
+(make-variable-buffer-local 'LaTeX-provided-class-options)
 
 (defun LaTeX-provided-class-options-member (class option)
   "Return non-nil if OPTION has been given to CLASS at load time.
@@ -1968,7 +1974,7 @@ Return first found class option matching REGEXP, or nil if not found."
                             (mapcar #'cdr LaTeX-provided-class-options))
               #'string-match))
 
-(defvar-local LaTeX-provided-package-options nil
+(defvar LaTeX-provided-package-options nil
   "Alist of options provided to LaTeX packages.
 For each element, the CAR is the name of the package, the CDR is
 the list of options provided to it.
@@ -1978,6 +1984,7 @@ For example, its value will be
    (\"geometry\" \"a4paper\" \"top=2cm\" \"bottom=2cm\" \"left=2.5cm\" \"right=2.5cm\")
    ...)
 See also `LaTeX-provided-class-options'.")
+(make-variable-buffer-local 'LaTeX-provided-package-options)
 
 (defun LaTeX-provided-package-options-member (package option)
   "Return non-nil if OPTION has been given to PACKAGE at load time.
@@ -2319,8 +2326,9 @@ TYPE is one of the symbols mac or env."
 
 ;;; Biber support
 
-(defvar-local LaTeX-using-Biber nil
+(defvar LaTeX-using-Biber nil
   "Used to track whether Biber is in use.")
+(make-variable-buffer-local 'LaTeX-using-Biber)
 
 ;;; BibTeX
 
@@ -3898,7 +3906,7 @@ including buffer-local keyword additions via
   :group 'LaTeX-macro
   :type '(repeat (string)))
 
-(defvar-local LaTeX-verbatim-macros-with-delims-local nil
+(defvar LaTeX-verbatim-macros-with-delims-local nil
   "Buffer-local variable for inline verbatim with args in delimiters.
 
 Style files should add constructs to this variable and not to
@@ -3908,6 +3916,7 @@ Programs should not use this variable directly but the function
 `LaTeX-verbatim-macros-with-delims' which returns a value
 including values of the variable
 `LaTeX-verbatim-macros-with-delims' as well.")
+(make-variable-buffer-local 'LaTeX-verbatim-macros-with-delims-local)
 (put 'LaTeX-verbatim-macros-with-delims-local 'safe-local-variable
      #'TeX--list-of-string-p)
 
@@ -3922,7 +3931,7 @@ including buffer-local keyword additions via
   :group 'LaTeX-macro
   :type '(repeat (string)))
 
-(defvar-local LaTeX-verbatim-macros-with-braces-local nil
+(defvar LaTeX-verbatim-macros-with-braces-local nil
   "Buffer-local variable for inline verbatim with args in braces.
 
 Style files should add constructs to this variable and not to
@@ -3932,6 +3941,7 @@ Programs should not use this variable directly but the function
 `LaTeX-verbatim-macros-with-braces' which returns a value
 including values of the variable
 `LaTeX-verbatim-macros-with-braces' as well.")
+(make-variable-buffer-local 'LaTeX-verbatim-macros-with-braces-local)
 (put 'LaTeX-verbatim-macros-with-braces-local 'safe-local-variable
      #'TeX--list-of-string-p)
 
@@ -3946,7 +3956,7 @@ buffer-local keyword additions via
   :group 'LaTeX-environment
   :type '(repeat (string)))
 
-(defvar-local LaTeX-verbatim-environments-local nil
+(defvar LaTeX-verbatim-environments-local nil
   "Buffer-local variable for verbatim environments.
 
 Style files should add constructs to this variable and not to
@@ -3955,6 +3965,7 @@ Style files should add constructs to this variable and not to
 Programs should not use this variable directly but the function
 `LaTeX-verbatim-environments' which returns a value including
 values of the variable `LaTeX-verbatim-environments' as well.")
+(make-variable-buffer-local 'LaTeX-verbatim-environments-local)
 (put 'LaTeX-verbatim-environments-local 'safe-local-variable
      #'TeX--list-of-string-p)
 
@@ -6859,8 +6870,10 @@ The argument IGNORED is not used in any way."
         (setq LaTeX-section-menu
               (mapcar #'LaTeX-section-menu-entry LaTeX-section-list)))))
 
-(defvar-local LaTeX-environment-menu nil)
-(defvar-local LaTeX-environment-modify-menu nil)
+(defvar LaTeX-environment-menu nil)
+(make-variable-buffer-local 'LaTeX-environment-menu)
+(defvar LaTeX-environment-modify-menu nil)
+(make-variable-buffer-local 'LaTeX-environment-modify-menu)
 (defun LaTeX-environment-menu-filter (menu)
   "Filter function for the environment submenus in the mode menu.
 The argument MENU is the name of the submenu in concern and
@@ -7054,12 +7067,13 @@ value overriding `LaTeX-babel-hyphen-after-hyphen'."
                                    (boolean :tag "Insert plain hyphen first"
                                             :value t))))
 
-(defvar-local LaTeX-babel-hyphen-language nil
+(defvar LaTeX-babel-hyphen-language nil
   "String determining language-specific behavior of hyphen insertion.
 It serves as an indicator that the babel hyphenation string
 should be used and as a means to find a potential customization
 in `LaTeX-babel-hyphen-language-alist' related to the active
 language.  It is usually set by language-related style files.")
+(make-variable-buffer-local 'LaTeX-babel-hyphen-language)
 
 (defun LaTeX-babel-insert-hyphen (force)
   "Insert a hyphen string.

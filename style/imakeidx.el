@@ -1,6 +1,6 @@
 ;;; imakeidx.el --- AUCTeX style for `imakeidx.sty'.  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2023 Free Software Foundation, Inc.
+;; Copyright (C) 2012-2022 Free Software Foundation, Inc.
 
 ;; Maintainer: auctex-devel@gnu.org
 ;; Author: Mosè Giordano <giordano.mose@libero.it>
@@ -49,12 +49,13 @@
     ("columnseprule" ("true" "false")))
   "Key=value options for makeindex macro of the imakeidx package.")
 
-(defvar-local LaTeX-imakeidx-indexsetup-options
-    '(("level")
-      ("toclevel")
-      ("noclearpage" ("true" "false"))
-      ("othercode"))
+(defvar LaTeX-imakeidx-indexsetup-options
+  '(("level")
+    ("toclevel")
+    ("noclearpage" ("true" "false"))
+    ("othercode"))
   "Key=value options for indexsetup macro of the imakeidx package.")
+(make-variable-buffer-local 'LaTeX-imakeidx-indexsetup-options)
 
 (TeX-add-style-hook
  "imakeidx"

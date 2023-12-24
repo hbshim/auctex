@@ -206,6 +206,8 @@ package if loaded."
 
 (defvar LaTeX-caption-supported-float-types
   '("figure" "table" "ContinuedFloat"   ; Standard caption.sty
+    "sub" "subtable" "subfigure"        ; subcaption.sty
+    "bi" "bi-first" "bi-second"         ; bicaption.sty
     "ruled" "boxed"                     ; float.sty
     "floatingfigure" "floatingtable"    ; floatflt.sty
     "lstlisting"                        ; listings.sty
@@ -381,26 +383,26 @@ STAR is non-nil, do not query for a short-caption and a label."
     '("captionof*" (LaTeX-arg-caption-captionof t))
 
     '("captionsetup"
-      [TeX-arg-completing-read LaTeX-caption-supported-float-types
-                               "Float type"]
+      (TeX-arg-conditional (member "bicaption" (TeX-style-list))
+          ([LaTeX-arg-bicaption-captionsetup])
+        ([TeX-arg-completing-read
+          LaTeX-caption-supported-float-types "Float type"]))
       (TeX-arg-key-val (LaTeX-caption-key-val-options)))
 
     '("captionsetup*"
-      [TeX-arg-completing-read LaTeX-caption-supported-float-types
-                               "Float type"]
+      (TeX-arg-conditional (member "bicaption" (TeX-style-list))
+          ([LaTeX-arg-bicaption-captionsetup])
+        ([TeX-arg-completing-read
+          LaTeX-caption-supported-float-types "Float type"]))
       (TeX-arg-key-val (LaTeX-caption-key-val-options)))
 
     '("clearcaptionsetup"
-      [TeX-arg-completing-read (LaTeX-caption-key-val-options)
-                               "Single key"]
-      (TeX-arg-completing-read LaTeX-caption-supported-float-types
-                               "Float type"))
+      [TeX-arg-completing-read (LaTeX-caption-key-val-options) "Single key"]
+      (TeX-arg-completing-read LaTeX-caption-supported-float-types "Float type"))
 
     '("clearcaptionsetup*"
-      [TeX-arg-completing-read (LaTeX-caption-key-val-options)
-                               "Single key"]
-      (TeX-arg-completing-read LaTeX-caption-supported-float-types
-                               "Float type"))
+      [TeX-arg-completing-read (LaTeX-caption-key-val-options) "Single key"]
+      (TeX-arg-completing-read LaTeX-caption-supported-float-types "Float type"))
 
     '("captionbox"  (LaTeX-arg-caption-captionbox) t)
 
@@ -448,10 +450,8 @@ STAR is non-nil, do not query for a short-caption and a label."
 
     '("bothIfSecond" 2))
 
-   ;; \caption(of|box|setup) macros should get their own lines
-   (LaTeX-paragraph-commands-add-locally '("captionof"
-                                           "captionbox"
-                                           "captionsetup"))
+   ;; \caption(box|of) macros should get their own lines
+   (LaTeX-paragraph-commands-add-locally '("captionbox" "captionof"))
 
    ;; Fontification
    (when (and (featurep 'font-latex)
@@ -477,7 +477,8 @@ STAR is non-nil, do not query for a short-caption and a label."
  TeX-dialect)
 
 (defvar LaTeX-caption-package-options-list
-  (append '(("figureposition" ("top" "above" "bottom" "below"))
+  (append '(("compatibility"  ("true" "false"))
+            ("figureposition" ("top" "above" "bottom" "below"))
             ("tableposition"  ("top" "above" "bottom" "below")))
           LaTeX-caption-key-val-options)
   "Package options for the caption package.")

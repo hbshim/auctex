@@ -121,10 +121,6 @@ caption, insert only a caption."
 
    (TeX-add-symbols
     ;; Basic commands
-    '("subcaptionsetup"
-      [TeX-arg-completing-read LaTeX-caption-supported-float-types
-                               "Float type"]
-      (TeX-arg-key-val (LaTeX-caption-key-val-options)))
     '("subcaption"     (LaTeX-arg-subcaption-subcaption))
     '("subcaption*"    (LaTeX-arg-subcaption-subcaption     t)  )
     '("subcaptionbox"  (LaTeX-arg-subcaption-subcaptionbox) t)
@@ -166,10 +162,9 @@ caption, insert only a caption."
            '("figure" "table")))
        "Type")))
 
-   ;; \subcaption(box|setup)? and \subfloat macros should get their
-   ;; own lines
+   ;; \subcaption(box)? and \subfloat macros should get their own lines
    (LaTeX-paragraph-commands-add-locally
-    '("subcaption" "subcaptionbox" "subcaptionsetup" "subfloat"))
+    '("subcaption" "subcaptionbox" "subfloat"))
 
    ;; The subfigure & subtable environments
    (LaTeX-add-environments
@@ -197,8 +192,7 @@ caption, insert only a caption."
                               'textual)
      (font-latex-add-keywords '(("subref"                "*{"))
                               'reference)
-     (font-latex-add-keywords '(("DeclareCaptionSubType" "*[{")
-                                ("subcaptionsetup"       "[{"))
+     (font-latex-add-keywords '(("DeclareCaptionSubType" "*[{"))
                               'function)) )
  TeX-dialect)
 
