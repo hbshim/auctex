@@ -56,17 +56,6 @@
   :group 'tex
   :load "tex" :load "latex" :load "tex-style")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;; ::R1EFME3:: move to tex.el; seems to enough to combine with TeX-modes ;;
-;; (defconst TeX-mode-alist                                                 ;;
-;;   '((tex-mode . tex-mode)                                                ;;
-;;     (plain-tex-mode . tex-mode)                                          ;;
-;;     (texinfo-mode . texinfo)                                             ;;
-;;     (latex-mode . tex-mode)                                              ;;
-;;     (doctex-mode . tex-mode))                                            ;;
-;;   "Alist of built-in TeX modes and their load files.")                   ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;; from ::JFV9M5::
 (defcustom TeX-modes '(tex-mode
                        plain-tex-mode
@@ -2596,16 +2585,6 @@ shared by all users of a site."
   :group 'TeX-file
   :type 'directory)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; (defcustom TeX-auto-local "auto"                                       ;;
-;;   "Directory containing automatically generated TeX information.       ;;
-;;                                                                        ;;
-;; This correspond to TeX macros found in the current directory, and must ;;
-;; be relative to that."                                                  ;;
-;;   :group 'TeX-file                                                     ;;
-;;   :type 'string)                                                       ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defcustom TeX-output-dir nil
   "The path of the directory where output files should be placed.
 
@@ -2742,20 +2721,6 @@ are returned."
           ;; duplicates?
           (nreverse input-dir-list))))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;; ::RTBBSU:: these are just called once so why contaminate the namespace?    ;;
-;; (defun TeX-macro-global ()                                                    ;;
-;;   "Return directories containing the site's TeX macro and style files."       ;;
-;;   (or (TeX-tree-expand '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST") ;;
-;;                        "latex" '("/tex/" "/bibtex/bst/"))                     ;;
-;;       '("/usr/share/texmf/tex/" "/usr/share/texmf/bibtex/bst/")))             ;;
-;;                                                                               ;;
-;; (defun TeX-macro-private ()                                                   ;;
-;;   "Return directories containing the user's TeX macro and style files."       ;;
-;;   (TeX-tree-expand '("$TEXMFHOME") "latex" '("/tex/" "/bibtex/bst/")))        ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (let* ((macro-global
         (or ;; TeX-macro-global
          (TeX-tree-expand '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST")
@@ -2798,47 +2763,6 @@ are returned."
     "Directories containing TeX macro and style files."
     :group 'TeX-file
     :type '(repeat (directory :format "%v"))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; (defcustom TeX-macro-private (or (append (TeX-parse-path "TEXINPUTS")  ;;
-;;                                          (TeX-parse-path "BIBINPUTS")) ;;
-;;                                  (TeX-macro-private))                  ;;
-;;   "Directories where you store your personal TeX macros."              ;;
-;;   :group 'TeX-file                                                     ;;
-;;   :type '(repeat (file :format "%v")))                                 ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;; ::V0KW3U:: see ::FGFLPK4::                                                 ;;
-;; (defcustom TeX-auto-private                                                   ;;
-;;   (list (expand-file-name TeX-auto                                            ;;
-;;                           (or (concat user-emacs-directory "auctex/")         ;;
-;;                               "~/.emacs.d/auctex/")))                         ;;
-;;   "List of directories containing automatically generated AUCTeX style files. ;;
-;;                                                                               ;;
-;; These correspond to the personal TeX macros."                                 ;;
-;;   :group 'TeX-file                                                            ;;
-;;   :type '(repeat (file :format "%v")))                                        ;;
-;;                                                                               ;;
-;; (if (stringp TeX-auto-private)          ;Backward compatibility               ;;
-;;     (setq TeX-auto-private (list TeX-auto-private)))                          ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;; see ::ZZLK393::                                                    ;;
-;; (defcustom TeX-style-private                                          ;;
-;;   (list (expand-file-name TeX-style-local                             ;;
-;;                           (or (concat user-emacs-directory "auctex/") ;;
-;;                               "~/.emacs.d/auctex/")))                 ;;
-;;   "List of directories containing hand-generated AUCTeX style files.  ;;
-;;                                                                       ;;
-;; These correspond to the personal TeX macros."                         ;;
-;;   :group 'TeX-file                                                    ;;
-;;   :type '(repeat (file :format "%v")))                                ;;
-;;                                                                       ;;
-;; (if (stringp TeX-style-private)         ;Backward compatibility       ;;
-;;     (setq TeX-style-private (list TeX-style-private)))                ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defcustom TeX-style-path
   (let ((path))
