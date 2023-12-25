@@ -56,41 +56,44 @@
   :group 'tex
   :load "tex" :load "latex" :load "tex-style")
 
-;; from ::JFV9M5::
-(defcustom TeX-modes '(tex-mode
-                       plain-tex-mode
-                       texinfo-mode
-                       latex-mode
-                       doctex-mode)
-  "List of modes that will be overridden by modes from AUCTeX.
+(let ((TeX- (lambda (orig-mode) ;; : symbol → symbol
+              (intern (concat "TeX-" (symbol-name orig-mode))))))
+
+  ;; from ::JFV9M5::
+  (defcustom TeX-modes '(tex-mode
+                         plain-tex-mode
+                         texinfo-mode
+                         latex-mode
+                         doctex-mode)
+    "List of modes that will be overridden by modes from AUCTeX.
 
 This variable can't be set normally; use customize because it'll
 do `advice-add'/`-remove' on each element `x-mode' with AUCTeX
 provided mode `TeX-x-mode'."
-  ;; TODO It would be nice if this can check if the specified mode
-  ;; exists and the TeX-version mode also exists.
-  :type 'list
-  :group 'AUCTex
-  :set
-  #'(lambda (symb val-list &optional _ignored)
-      (mapc
-       #'(lambda (orig-mode)
-           (let ((new-mode (intern (concat "TeX-" (symbol-name orig-mode)))))
-            (advice-add orig-mode :override new-mode  '((depth . -10)))))
-       val-list)
-      (set-default-toplevel-value symb val-list))
-  :initialize #'custom-initialize-reset)
+    ;; TODO It would be nice if this can check if the specified mode
+    ;; exists and the TeX-version mode also exists.
+    :type 'list
+    :group 'AUCTex
+    :set
+    #'(lambda (symb val-list &optional _ignored)
+        (mapc
+         #'(lambda (orig-mode)
+             (let ((new-mode (funcall TeX- orig-mode)))
+               (advice-add orig-mode :override new-mode  '((depth . -10)))))
+         val-list)
+        (set-default-toplevel-value symb val-list))
+    :initialize #'custom-initialize-reset)
 
-(defun tex-unload-function ()
-  (when (boundp 'TeX-modes) ;; AUCTeX loaded
-    (mapc ;; function → list
-     #'(lambda (orig-mode) ;; symbol → nil
-         (let ((new-mode (intern (concat "TeX-" (symbol-name orig-mode)))))
-          (advice-remove orig-mode new-mode)))
-     TeX-modes))
-  ;; for the standard unloading proceeds, this needs to return `nil'
-  ;; (see doc on `unload-feature')
-  nil)
+  (defun tex-unload-function ()
+    (when (boundp 'TeX-modes) ;; AUCTeX loaded
+      (mapc ;; function → list
+       #'(lambda (orig-mode) ;; symbol → nil
+           (let ((new-mode (funcall TeX- orig-mode)))
+             (advice-remove orig-mode new-mode)))
+       TeX-modes))
+    ;; for the standard unloading proceeds, this needs to return `nil'
+    ;; (see doc on `unload-feature')
+    nil))
 
 ;; ;; see ::3VWI2T1::
 ;; ;; ::VK5EGE1:: `TeX-modes-set' does seem to make sense only when VALUE is `TeX-modes'

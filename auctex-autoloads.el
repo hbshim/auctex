@@ -211,14 +211,32 @@ If TEX is a directory, generate style files for all files in the directory.
 (fn TEX AUTO)" t)
 (autoload 'TeX-auto-generate-global "tex" "\
 Create global auto directory for global TeX macro definitions." t)
-(autoload 'TeX-submit-bug-report "tex" "\
-Submit a bug report on AUCTeX via mail.
+(let ((AUCTeX-version "13.2.3") (AUCTeX-date "2023-12-07")) (defun TeX-submit-bug-report nil "Submit a bug report on AUCTeX via mail.
 
 Don't hesitate to report any problems or inaccurate documentation.
 
 If you don't have setup sending mail from Emacs, please copy the
 output buffer into your mail program, as it gives us important
-information about your AUCTeX version and AUCTeX configuration." t)
+information about your AUCTeX version and AUCTeX configuration." (interactive) (require 'reporter) (defvar reporter-prompt-for-summary-p) (let ((reporter-prompt-for-summary-p "Bug report subject: ")) (reporter-submit-bug-report "bug-auctex@gnu.org" AUCTeX-version (list AUCTeX-date 'window-system 'LaTeX-version 'TeX-style-path 'TeX-auto-save 'TeX-parse-self 'TeX-master 'TeX-command-list) nil (lambda nil (save-excursion (goto-char (point-min)) (re-search-forward mail-header-separator) (forward-char) (delete-char 1) (forward-char) (delete-char 2))) (propertize "
+" 'display (with-temp-buffer (insert "Remember to cover the basics, that is, what you expected to happen and
+what in fact did happen.
+
+Be sure to consult the FAQ section in the manual before submitting
+a bug report.  In addition check if the bug is reproducable with an
+up-to-date version of AUCTeX.  So please upgrade to the version
+available from ") (insert-text-button "https://www.gnu.org/software/auctex/" 'face 'link 'help-echo (concat "mouse-2, RET: Follow this link") 'action (lambda (_button) (browse-url "https://www.gnu.org/software/auctex/")) 'follow-link t) (insert " if your
+installation is older than the one available from the web site.
+
+If the bug is triggered by a specific (La)TeX file, you should try
+to produce a minimal sample file showing the problem and include it
+in your report.
+
+Your report will be posted for the auctex package at the GNU bug
+tracker.  Visit ") (insert-text-button "https://debbugs.gnu.org/cgi/pkgreport.cgi?pkg=auctex" 'face 'link 'help-echo (concat "mouse-2, RET: Follow this link") 'action (lambda (_button) (browse-url "https://debbugs.gnu.org/cgi/pkgreport.cgi?pkg=auctex")) 'follow-link t) (insert "
+to browse existing AUCTeX bugs.
+------------------------------------------------------------------------
+
+") (buffer-string)))))))
 (register-definition-prefixes "tex" '("Bib" "ConTeXt-" "LaTeX-" "TeX-" "VirTeX-common-initialization" "docTeX-default-extension" "plain-TeX-auto-regexp-list" "tex-"))
 
 
