@@ -225,11 +225,11 @@ Writing Your Own Style Support
 
 Copying, Changes, Development, FAQ
 
-* Copying this Manual::         
-* Changes::                     
-* Development::                 
-* FAQ::                         
-* Texinfo mode::                
+* Copying this Manual::
+* Changes::
+* Development::
+* FAQ::
+* Texinfo mode::
 
 Copying this Manual
 
@@ -237,10 +237,10 @@ Copying this Manual
 
 Indices
 
-* Key Index::                   
-* Function Index::              
-* Variable Index::              
-* Concept Index::               
+* Key Index::
+* Function Index::
+* Variable Index::
+* Concept Index::
 
 @end detailmenu
 @end menu
@@ -3174,12 +3174,11 @@ this variable if automatic parsing is not enabled.
 
 After confirming a command to execute, @AUCTeX{} will try to save any
 buffers related to the document, and check if the document needs to be
-reformatted.  If the variable @code{TeX-save-query} is non-nil,
-@AUCTeX{} will query before saving each file.  By default @AUCTeX{} will
-check emacs buffers associated with files in the current directory, in
-one of the @code{TeX-macro-private} directories, and in the
-@code{TeX-macro-global} directories.  You can change this by setting the
-variable @code{TeX-check-path}.
+reformatted.  If the variable @code{TeX-save-query} is non-nil, @AUCTeX{}
+will query before saving each file.  By default @AUCTeX{} will check emacs
+buffers associated with files in the current directory, in one of the
+@code{TeX-macro} directories. You can change this by setting the variable
+@code{TeX-check-path}.
 
 @defopt TeX-check-path
 Directory path to search for dependencies.
@@ -5091,20 +5090,20 @@ environments available for completion purposes.  The drawback is slower
 load time when you edit a new file and perhaps too many confusing
 symbols when you try to do a completion.
 
-You can disable the automatic generated global style hooks by setting
-the variable @code{TeX-auto-global} to nil.
+You can disable the automatic generated style hooks by setting the
+variable @code{TeX-auto} to nil.
 
-@defopt TeX-macro-global
-Directories containing the site's @TeX{} style files.
+@defopt TeX-macro
+Directories containing @TeX{} style files.
 @end defopt
 
-@defopt TeX-style-global
-Directory containing hand generated @TeX{} information.
+@defopt TeX-style
+Directory containing generated @TeX{} information.
 
 These correspond to @TeX{} macros shared by all users of a site.
 @end defopt
 
-@defopt TeX-auto-global
+@defopt TeX-auto
 Directory containing automatically generated information.
 
 For storing automatic extracted information about the @TeX{} macros
@@ -5123,11 +5122,11 @@ shared by all users of a site.
 
 You should specify where you store your private @TeX{} macros, so
 @AUCTeX{} can extract their information.  The extracted information will
-go to the directories listed in @code{TeX-auto-private}
+go to the directories listed in @code{TeX-auto}
 
 Use @kbd{M-x TeX-auto-generate @key{RET}} to extract the information.
 
-@defopt TeX-macro-private
+@defopt TeX-macro
 Directories where you store your personal @TeX{} macros.  The value
 defaults to the directories listed in the @env{TEXINPUTS} and
 @env{BIBINPUTS} environment variables or to the respective directories
@@ -5135,9 +5134,9 @@ in @code{$TEXMFHOME} of @command{kpsewhich} setting if no results can be obtaine
 variables.
 @end defopt
 
-@defopt TeX-auto-private
+@defopt TeX-auto
 List of directories containing automatically generated @AUCTeX{} style
-files.  These correspond to the personal @TeX{} macros.
+files.
 @end defopt
 
 @deffn Command TeX-auto-generate @var{tex} @var{auto}
@@ -5146,9 +5145,8 @@ files.  These correspond to the personal @TeX{} macros.
 generate style hooks for all files in the directory.
 @end deffn
 
-@defopt TeX-style-private
-List of directories containing hand generated @AUCTeX{} style files.
-These correspond to the personal @TeX{} macros.
+@defopt TeX-style
+List of directories containing @AUCTeX{} style files.
 @end defopt
 
 @node Automatic Local
@@ -5161,21 +5159,21 @@ These correspond to the personal @TeX{} macros.
 
 @AUCTeX{} can update the style information about a file each time you
 save it if @code{TeX-auto-save} option is enabled.  Saved information will
-be stored in the directory @code{TeX-auto-local}, set to @samp{"auto"} by
+be stored in the directory @code{TeX-auto}, set to @samp{"auto"} by
 default.
 
 The advantage of doing this is that macros, labels, etc.@: defined in any
 file in a multifile document will be known in all the files in the
 document.  The disadvantage is that saving will be slower.  To disable,
-set @code{TeX-auto-local} to @code{nil}.
+set @code{TeX-auto} to @code{nil}.
 
-@defopt TeX-style-local
-Directory containing hand generated @TeX{} information.
+@defopt TeX-style
+Directory containing generated @TeX{} information.
 
 These correspond to @TeX{} macros found in the current directory.
 @end defopt
 
-@defopt TeX-auto-local
+@defopt TeX-auto
 Directory containing automatically generated @TeX{} information.
 
 These correspond to @TeX{} macros found in the current directory.
@@ -5187,7 +5185,7 @@ of master directory.
 
 Otherwise, save in each @file{auto} subdirectory of the parsed file.
 
-Subdirectory name is actually taken from @code{TeX-auto-local}.
+Subdirectory name is actually taken from @code{TeX-auto}.
 @end defopt
 
 @node Style Files
@@ -5228,7 +5226,7 @@ Here is a simple example of a style file.
 
 (TeX-add-style-hook
  "book"
- (lambda () 
+ (lambda ()
    (LaTeX-largest-level-set "part"))
  TeX-dialect)
 @end lisp
@@ -6029,11 +6027,11 @@ List of functions to be called after parsing a @TeX{} file.
 @appendix Copying, Changes, Development, FAQ, Texinfo Mode
 
 @menu
-* Copying this Manual::         
-* Changes::                     
-* Development::                 
-* FAQ::                         
-* Texinfo mode::                
+* Copying this Manual::
+* Changes::
+* Development::
+* FAQ::
+* Texinfo mode::
 @end menu
 
 @node Copying this Manual
@@ -6193,7 +6191,7 @@ buffer.  Note that you can make, say @samp{Makeinfo}, the default by
 adding this statement in your init file:
 
 @lisp
-(add-hook 'Texinfo-mode-hook 
+(add-hook 'Texinfo-mode-hook
           (lambda () (setq TeX-command-default "Makeinfo")))
 @end lisp
 
@@ -6287,10 +6285,10 @@ used by @AUCTeX{} for inserting @samp{@@node}.
 @unnumbered Indices
 
 @menu
-* Key Index::                   
-* Function Index::              
-* Variable Index::              
-* Concept Index::               
+* Key Index::
+* Function Index::
+* Variable Index::
+* Concept Index::
 @end menu
 
 @node Key Index

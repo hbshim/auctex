@@ -33,7 +33,8 @@
         (wizbuf (current-buffer)))
     (set-visited-file-name nil)
     (erase-buffer)
-    (if (featurep 'tex-site)
+    (if ;; (featurep 'tex-site) `tex-site' merged to `tex'
+        (boundp 'TeX-modes)
         (insert-before-markers "AUCTeX is enabled.  Good.\n")
       (insert-before-markers "\
 It appears that AUCTeX is not enabled.  AUCTeX is the main
@@ -47,18 +48,20 @@ major mode for editing TeX/LaTeX files.\n")
             (select-window wizwin)
             (switch-to-buffer wizbuf))
           (condition-case nil
-              (require 'tex-site)
+              (require 'site)
             (error (insert-before-markers "AUCTeX appears not to be installed.\n")))
         (insert-before-markers "AUCTeX installation imprudently skipped.\n"))
-      (when (featurep 'tex-site)
+      (when ;; (featurep 'tex-site) `tex-site' merged to `tex'
+          (boundp 'TeX-modes)
         (when (prog1 (yes-or-no-p (format "Also enable AUCTeX in `%s'" user-init-file))
                 (select-window wizwin)
                 (switch-to-buffer wizbuf))
           (write-region "\
 ;;; Enable AUCTeX
-\(require 'tex-site)\n" nil user-init-file t))))
+\(require 'tex)\n" nil user-init-file t))))
     (if (memq 'turn-on-reftex
-              (if (featurep 'tex-site)
+              (if ;; (featurep 'tex-site) `tex-site' merged to `tex'
+                  (boundp 'TeX-modes)
                   (and (boundp 'LaTeX-mode-hook) LaTeX-mode-hook)
                 (and (boundp 'latex-mode-hook) latex-mode-hook)))
         (insert-before-markers "RefTeX is enabled.  Good.\n")
@@ -86,9 +89,10 @@ and bibliographics references.\n")
 " nil user-init-file t)
           (error (insert-before-markers
                   (format "Unable to write to file `%s'\n" user-init-file))))))
-    (when (and (featurep 'tex-site)
-               (boundp 'LaTeX-mode-hook)
-               (memq #'turn-on-reftex LaTeX-mode-hook))
+    (when (and ;; (featurep 'tex-site) `tex-site' merged to `tex'
+           (boundp 'TeX-modes)
+           (boundp 'LaTeX-mode-hook)
+           (memq #'turn-on-reftex LaTeX-mode-hook))
       (if (and (boundp 'reftex-plug-into-AUCTeX)
                reftex-plug-into-AUCTeX)
           (insert-before-markers

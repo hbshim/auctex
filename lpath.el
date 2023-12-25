@@ -9,5 +9,5 @@
 (let ((auctex-dir (file-name-directory load-file-name)))
   (add-to-list 'load-path auctex-dir)
   (add-to-list 'load-path (expand-file-name "style" auctex-dir))
-  (setq TeX-lisp-directory "<none>"
-        TeX-auto-global "<none>"))
+  (setq ;; see ::NQO61V:: TeX-lisp-directory "<none>"
+        TeX-auto "<none>"))

@@ -2337,6 +2337,7 @@ TYPE is one of the symbols mac or env."
     ("@[a-zA-Z]+[{(][ \t]*\\([^, \n\r\t%\"#'()={}]*\\)" 1 LaTeX-auto-bibitem))
   "List of regexp-list expressions matching BibTeX items.")
 
+;; can be added as a hook. see RL3R454
 ;;;###autoload
 (defun BibTeX-auto-store ()
   "This function should be called from `bibtex-mode-hook'.

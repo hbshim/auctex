@@ -362,7 +362,7 @@ is operative instead of the default, use
 If you want to remove a preinstalled @AUCTeX{} completely before any of
 its modes have been used,
 @lisp
-(unload-feature 'tex-site)
+(unload-feature 'tex)
 @end lisp
 @noindent
 should accomplish that.

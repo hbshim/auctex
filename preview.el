@@ -38,7 +38,7 @@
 
 ;;; Code:
 
-(require 'tex-site)
+;; (require 'tex-site) `tex-site' merged to `tex'
 (require 'tex)
 (require 'latex)
 
@@ -2929,7 +2929,9 @@ filename=%s>
       (preview-active-contents ,ov)])
    ev))
 
-(defvar preview-TeX-style-dir)
+;; see ::FSYQKB2::
+(defvar preview-TeX-style-dir
+  (expand-file-name "latex" (file-name-directory load-file-name)))
 
 (defun preview-TeX-style-cooked ()
   "Return `preview-TeX-style-dir' in cooked form.
@@ -4228,12 +4230,16 @@ internal parameters, STR may be a log to insert into the current log."
              (delete-process process)
              (preview-reraise-error process)))))
 
-(defconst preview-version AUCTeX-version
-  "Preview version.
-If not a regular release, the date of the last change.")
-
-(defconst preview-release-date AUCTeX-date
-  "Preview release date using the ISO 8601 format, yyyy-mm-dd.")
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; ::Z31CJN3:: just follow the standard protocol                 ;;
+;; ;; Are these so important that desserve designated variables??   ;;
+;; (defconst preview-version AUCTeX-version                         ;;
+;;   "Preview version.                                              ;;
+;; If not a regular release, the date of the last change.")         ;;
+;;                                                                  ;;
+;; (defconst preview-release-date AUCTeX-date                       ;;
+;;   "Preview release date using the ISO 8601 format, yyyy-mm-dd.") ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun preview-dump-state (buffer)
   (condition-case nil

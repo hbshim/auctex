@@ -30,9 +30,10 @@
 
 (when (< emacs-major-version 26)
   (error "AUCTeX requires Emacs 26.1 or later"))
+(defalias 'TeX-load-hack #'ignore)
 
 (require 'custom)
-(require 'tex-site)
+;; (require 'tex-site) `tex-site' merged to `tex'
 (eval-when-compile
   (require 'cl-lib))
 (require 'texmathp)
@@ -42,6 +43,80 @@
 ;; Require dbus at compile time to get macro definition of
 ;; `dbus-ignore-errors'.
 (eval-when-compile (require 'dbus))
+
+;; see ::R9C4QK3::
+;; Define here in order for `M-x customize-group <RET> AUCTeX <RET>'
+;; to work if the main AUCTeX files are not loaded yet.
+(defgroup AUCTeX nil
+  "A (La)TeX environment."
+  :tag "AUCTeX"
+  :link '(custom-manual "(auctex)Top")
+  :link '(url-link :tag "Home Page" "https://www.gnu.org/software/auctex/")
+  :prefix "TeX-"
+  :group 'tex
+  :load "tex" :load "latex" :load "tex-style")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; ::R1EFME3:: move to tex.el; seems to enough to combine with TeX-modes ;;
+;; (defconst TeX-mode-alist                                                 ;;
+;;   '((tex-mode . tex-mode)                                                ;;
+;;     (plain-tex-mode . tex-mode)                                          ;;
+;;     (texinfo-mode . texinfo)                                             ;;
+;;     (latex-mode . tex-mode)                                              ;;
+;;     (doctex-mode . tex-mode))                                            ;;
+;;   "Alist of built-in TeX modes and their load files.")                   ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; from ::JFV9M5::
+(defcustom TeX-modes '(tex-mode
+                       plain-tex-mode
+                       texinfo-mode
+                       latex-mode
+                       doctex-mode)
+  "List of modes that will be overridden by modes from AUCTeX.
+
+This variable can't be set normally; use customize because it'll
+do `advice-add'/`-remove' on each element `x-mode' with AUCTeX
+provided mode `TeX-x-mode'."
+  ;; TODO It would be nice if this can check if the specified mode
+  ;; exists and the TeX-version mode also exists.
+  :type 'list
+  :group 'AUCTex
+  :set
+  #'(lambda (symb val-list &optional _ignored)
+      (mapc
+       #'(lambda (orig-mode)
+           (let ((new-mode (intern (concat "TeX-" (symbol-name orig-mode)))))
+            (advice-add orig-mode :override new-mode  '((depth . -10)))))
+       val-list)
+      (set-default-toplevel-value symb val-list))
+  :initialize #'custom-initialize-reset)
+
+(defun tex-unload-function ()
+  (when (boundp 'TeX-modes) ;; AUCTeX loaded
+    (mapc ;; function → list
+     #'(lambda (orig-mode) ;; symbol → nil
+         (let ((new-mode (intern (concat "TeX-" (symbol-name orig-mode)))))
+          (advice-remove orig-mode new-mode)))
+     TeX-modes))
+  ;; for the standard unloading proceeds, this needs to return `nil'
+  ;; (see doc on `unload-feature')
+  nil)
+
+;; ;; see ::3VWI2T1::
+;; ;; ::VK5EGE1:: `TeX-modes-set' does seem to make sense only when VALUE is `TeX-modes'
+;; (defun TeX-modes-set (orig-mode value &optional _ignored)
+;;   "Override `ORIG-MODE'∈`TeX-modes' with `TeX-ORIG-MODE'.
+
+;; Non-`nil' VALUE does the override and `nil' resets the original
+;; mode. The function `TeX-ORIG-MODE' obviously should have been
+;; defined."
+;;   (let ((new-mode (intern (concat "TeX-" (symbol-name orig-mode-name)))))
+;;     (if (memq orig-mode TeX-modes)
+;;         (if val
+;;             (advice-add orig-mode :override new-mode-name '((depth . -10)))
+;;           (advice-remove orig-mode new-mode))
+;;     (display-warning 'TeX-modes-set "Check if `ORIG-MODE'∈`TeX-modes'"))))
 
 ;; Silence the compiler for functions:
 (declare-function dbus-get-unique-name "ext:dbusbind.c"
@@ -75,7 +150,7 @@
 (defvar TeX-default-extension)
 (defvar TeX-esc)
 (defvar TeX-interactive-mode)
-(defvar TeX-macro-global)
+(defvar TeX-macro)
 (defvar TeX-mode-map)
 (defvar TeX-mode-p)
 (defvar TeX-output-extension)
@@ -2496,20 +2571,40 @@ Return nil otherwise."
 
 ;;; Style Paths
 
-(defcustom TeX-style-global (expand-file-name "style" TeX-data-directory)
+;; ::Z31DLZ3:: Move this to tex.el
+(defvar TeX-data-directory
+  (file-name-directory load-file-name)
+  "The directory where the AUCTeX non-Lisp data is located.")
+
+;; ::ZZLK393:: combine `TeX-style-global', `-local', `-private'
+;; into just `TeX-style'
+(defcustom TeX-style (expand-file-name "style" TeX-data-directory)
   "Directory containing hand generated TeX information.
 
 These correspond to TeX macros shared by all users of a site."
   :group 'TeX-file
   :type 'directory)
 
-(defcustom TeX-auto-local "auto"
-  "Directory containing automatically generated TeX information.
+;; ::FGFLPK4:: combine `TeX-auto-global' and `TeX-auto-local' to `TeX-auto'
+;; also combine `TeX-auto-private' from ::V0KW3U::
+;; originally `TeX-auto-global' from `tex-site'.::BXT88C::
+(defcustom TeX-auto (expand-file-name "auto" TeX-data-directory)
+  "Directory containing automatically generated information.
 
-This correspond to TeX macros found in the current directory, and must
-be relative to that."
+For storing automatic extracted information about the TeX macros
+shared by all users of a site."
   :group 'TeX-file
-  :type 'string)
+  :type 'directory)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; (defcustom TeX-auto-local "auto"                                       ;;
+;;   "Directory containing automatically generated TeX information.       ;;
+;;                                                                        ;;
+;; This correspond to TeX macros found in the current directory, and must ;;
+;; be relative to that."                                                  ;;
+;;   :group 'TeX-file                                                     ;;
+;;   :type 'string)                                                       ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defcustom TeX-output-dir nil
   "The path of the directory where output files should be placed.
@@ -2556,43 +2651,20 @@ ARGNAME is prepended to the quoted output directory.  If
         (concat argname "\"" out-dir "\"")
       "")))
 
-(defcustom TeX-style-local "style"
-  "Directory containing hand generated TeX information.
+;; ;; see ::ZZLK393::
+;; (defcustom TeX-style-local "style"
+;;   "Directory containing hand generated TeX information.
 
-These correspond to TeX macros found in the current directory, and must
-be relative to that."
-  :group 'TeX-file
-  :type 'string)
+;; These correspond to TeX macros found in the current directory, and must
+;; be relative to that."
+;;   :group 'TeX-file
+;;   :type 'string)
 
 ;; Compatibility alias
 (defun TeX-split-string (regexp string)
   (split-string string regexp))
 (make-obsolete 'TeX-split-string
                "use (split-string STRING REGEXP) instead." "AUCTeX 13.0")
-
-(defun TeX-parse-path (env)
-  "Return a list if private TeX directories found in environment variable ENV."
-  (let* ((value (getenv env))
-         (entries (and value
-                       (split-string
-                        value
-                        (if (string-match ";" value) ";" ":"))))
-         (global (append '("/" "\\")
-                         (mapcar #'file-name-as-directory
-                                 TeX-macro-global)))
-         entry
-         answers)
-    (while entries
-      (setq entry (car entries))
-      (setq entries (cdr entries))
-      (setq entry (file-name-as-directory
-                   (if (string-match "/?/?\\'" entry)
-                       (substring entry 0 (match-beginning 0))
-                     entry)))
-      (or (not (file-name-absolute-p entry))
-          (member entry global)
-          (setq answers (cons entry answers))))
-    answers))
 
 (defun TeX-kpathsea-detect-path-delimiter ()
   "Auto detect the path delimiter for kpsewhich command.
@@ -2670,53 +2742,103 @@ are returned."
           ;; duplicates?
           (nreverse input-dir-list))))))
 
-(defun TeX-macro-global ()
-  "Return directories containing the site's TeX macro and style files."
-  (or (TeX-tree-expand '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST")
-                       "latex" '("/tex/" "/bibtex/bst/"))
-      '("/usr/share/texmf/tex/" "/usr/share/texmf/bibtex/bst/")))
 
-(defun TeX-macro-private ()
-  "Return directories containing the user's TeX macro and style files."
-  (TeX-tree-expand '("$TEXMFHOME") "latex" '("/tex/" "/bibtex/bst/")))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; ::RTBBSU:: these are just called once so why contaminate the namespace?    ;;
+;; (defun TeX-macro-global ()                                                    ;;
+;;   "Return directories containing the site's TeX macro and style files."       ;;
+;;   (or (TeX-tree-expand '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST") ;;
+;;                        "latex" '("/tex/" "/bibtex/bst/"))                     ;;
+;;       '("/usr/share/texmf/tex/" "/usr/share/texmf/bibtex/bst/")))             ;;
+;;                                                                               ;;
+;; (defun TeX-macro-private ()                                                   ;;
+;;   "Return directories containing the user's TeX macro and style files."       ;;
+;;   (TeX-tree-expand '("$TEXMFHOME") "latex" '("/tex/" "/bibtex/bst/")))        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defcustom TeX-macro-global (TeX-macro-global)
-  "Directories containing the site's TeX macro and style files."
-  :group 'TeX-file
-  :type '(repeat (directory :format "%v")))
+(let* ((macro-global
+        (or ;; TeX-macro-global
+         (TeX-tree-expand '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST")
+                          "latex" '("/tex/" "/bibtex/bst/"))
+         '("/usr/share/texmf/tex/" "/usr/share/texmf/bibtex/bst/")))
+       (parse-path
+        (lambda (env)
+          "Return a list if TeX directories found in environment variable ENV."
+          (let* ((env (getenv env))
+                 (entries (and env
+                               (split-string
+                                env
+                                (if (string-match ";" env) ";" ":"))))
+                 (global (append '("/" "\\")
+                                 (mapcar #'file-name-as-directory
+                                         macro-global))))
+            (let ((directory (lambda (dir-name)
+                               (when dir-name
+                                 (file-name-as-directory
+                                  (if (string-match "/?/?\\'" dir-name)
+                                      (substring dir-name 0 (match-beginning 0))
+                                    dir-name))))))
+              (named-let rec ((entries entries)
+                              (answers nil))
+                (let ((entry (funcall directory (car entries))))
+                  (if entries
+                      (if (and (not (file-name-absolute-p entry))
+                               (member entry global))
+                          (rec (cdr entries) answers (cons entry answers))
+                        (rec (cdr entries) answers))
+                    answers))))))))
+  ;; ::7IHI6M3:: This is a list so users can add `-local' and `-private'.
+  ;; no need for `TeX-macro-global' because these users are no idiots.
+  (defcustom TeX-macro
+    (append
+     (or (append (funcall parse-path "TEXINPUTS")
+                 (funcall parse-path "BIBINPUTS"))
+         (TeX-tree-expand '("$TEXMFHOME") "latex" '("/tex/" "/bibtex/bst/")))
+     macro-global)
+    "Directories containing TeX macro and style files."
+    :group 'TeX-file
+    :type '(repeat (directory :format "%v"))))
 
-(defcustom TeX-macro-private (or (append (TeX-parse-path "TEXINPUTS")
-                                         (TeX-parse-path "BIBINPUTS"))
-                                 (TeX-macro-private))
-  "Directories where you store your personal TeX macros."
-  :group 'TeX-file
-  :type '(repeat (file :format "%v")))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; (defcustom TeX-macro-private (or (append (TeX-parse-path "TEXINPUTS")  ;;
+;;                                          (TeX-parse-path "BIBINPUTS")) ;;
+;;                                  (TeX-macro-private))                  ;;
+;;   "Directories where you store your personal TeX macros."              ;;
+;;   :group 'TeX-file                                                     ;;
+;;   :type '(repeat (file :format "%v")))                                 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defcustom TeX-auto-private
-  (list (expand-file-name TeX-auto-local
-                          (or (concat user-emacs-directory "auctex/")
-                              "~/.emacs.d/auctex/")))
-  "List of directories containing automatically generated AUCTeX style files.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; ::V0KW3U:: see ::FGFLPK4::                                                 ;;
+;; (defcustom TeX-auto-private                                                   ;;
+;;   (list (expand-file-name TeX-auto                                            ;;
+;;                           (or (concat user-emacs-directory "auctex/")         ;;
+;;                               "~/.emacs.d/auctex/")))                         ;;
+;;   "List of directories containing automatically generated AUCTeX style files. ;;
+;;                                                                               ;;
+;; These correspond to the personal TeX macros."                                 ;;
+;;   :group 'TeX-file                                                            ;;
+;;   :type '(repeat (file :format "%v")))                                        ;;
+;;                                                                               ;;
+;; (if (stringp TeX-auto-private)          ;Backward compatibility               ;;
+;;     (setq TeX-auto-private (list TeX-auto-private)))                          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-These correspond to the personal TeX macros."
-  :group 'TeX-file
-  :type '(repeat (file :format "%v")))
-
-(if (stringp TeX-auto-private)          ;Backward compatibility
-    (setq TeX-auto-private (list TeX-auto-private)))
-
-(defcustom TeX-style-private
-  (list (expand-file-name TeX-style-local
-                          (or (concat user-emacs-directory "auctex/")
-                              "~/.emacs.d/auctex/")))
-  "List of directories containing hand-generated AUCTeX style files.
-
-These correspond to the personal TeX macros."
-  :group 'TeX-file
-  :type '(repeat (file :format "%v")))
-
-(if (stringp TeX-style-private)         ;Backward compatibility
-    (setq TeX-style-private (list TeX-style-private)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; see ::ZZLK393::                                                    ;;
+;; (defcustom TeX-style-private                                          ;;
+;;   (list (expand-file-name TeX-style-local                             ;;
+;;                           (or (concat user-emacs-directory "auctex/") ;;
+;;                               "~/.emacs.d/auctex/")))                 ;;
+;;   "List of directories containing hand-generated AUCTeX style files.  ;;
+;;                                                                       ;;
+;; These correspond to the personal TeX macros."                         ;;
+;;   :group 'TeX-file                                                    ;;
+;;   :type '(repeat (file :format "%v")))                                ;;
+;;                                                                       ;;
+;; (if (stringp TeX-style-private)         ;Backward compatibility       ;;
+;;     (setq TeX-style-private (list TeX-style-private)))                ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defcustom TeX-style-path
   (let ((path))
@@ -2725,19 +2847,17 @@ These correspond to the personal TeX macros."
     (mapc (lambda (file)
             (when (and file (not (member file path)))
               (setq path (cons file path))))
-          (append (list TeX-auto-global TeX-style-global)
-                  TeX-auto-private TeX-style-private
-                  (list TeX-auto-local TeX-style-local)))
+          (append (list TeX-auto TeX-style)))
     (nreverse path))
   "List of directories to search for AUCTeX style files.
 Per default the list is built from the values of the variables
-`TeX-auto-global', `TeX-style-global', `TeX-auto-private',
-`TeX-style-private', `TeX-auto-local', and `TeX-style-local'."
+`TeX-auto', `TeX-style', `tex-auto',
+`TeX-style', `TeX-auto', and `TeX-style'."
   :group 'TeX-file
   :type '(repeat (file :format "%v")))
 
 (defcustom TeX-check-path
-  (append (list ".") TeX-macro-private TeX-macro-global)
+  (append (list ".") TeX-macro)
   "Directory path to search for dependencies.
 
 If nil, just check the current file.
@@ -2817,13 +2937,13 @@ side effect for example on variable `TeX-font-list'.")
                                  (file-relative-name TeX-master))
                               "./"))
                 (TeX-style-path (append (list (expand-file-name
-                                               TeX-auto-local dir)
+                                               TeX-auto dir)
                                               (expand-file-name
-                                               TeX-auto-local master-dir)
+                                               TeX-auto master-dir)
                                               (expand-file-name
-                                               TeX-style-local dir)
+                                               TeX-style dir)
                                               (expand-file-name
-                                               TeX-style-local master-dir))
+                                               TeX-style master-dir))
                                         TeX-style-path)))
            (TeX-load-style style)))
         (t                              ;Relative path
@@ -2963,8 +3083,8 @@ See variable `TeX-style-hook-dialect' for supported dialects."
               (setcdr style-data hooks)
             (setq TeX-style-hook-list (delq style-data TeX-style-hook-list)))))))
 
-(defcustom TeX-virgin-style (if (and TeX-auto-global
-                                     (file-directory-p TeX-auto-global))
+(defcustom TeX-virgin-style (if (and TeX-auto
+                                     (file-directory-p TeX-auto))
                                 "virtex"
                               "NoVirtexSymbols")
   "Style all documents use."
@@ -4007,7 +4127,7 @@ Each style file of automatically parsed information is saved in
 
 When nil, saves in each \"auto\" subdirectory.
 
-Subdirectory name is actually taken from `TeX-auto-local'."
+Subdirectory name is actually taken from `TeX-auto'."
   :group 'TeX-parse
   :type 'boolean)
 
@@ -4015,10 +4135,10 @@ Subdirectory name is actually taken from `TeX-auto-local'."
   "Save all relevant TeX information from the current buffer."
   (if TeX-auto-untabify
       (untabify (point-min) (point-max)))
-  (if (and TeX-auto-save TeX-auto-local)
+  (if (and TeX-auto-save TeX-auto)
       (let* ((file (expand-file-name
                     (concat
-                     (file-name-as-directory TeX-auto-local)
+                     (file-name-as-directory TeX-auto)
                      (TeX-strip-extension nil TeX-all-extensions t)
                      ".el")
                     (if TeX-auto-save-aggregate
@@ -4036,12 +4156,12 @@ Subdirectory name is actually taken from `TeX-auto-local'."
               (TeX-auto-store file))
           (message "Can't write style information.")))))
 
-(defcustom TeX-macro-default (car-safe TeX-macro-private)
+(defcustom TeX-macro-default (car-safe TeX-macro)
   "Default directory to search for TeX macros."
   :group 'TeX-file
   :type 'directory)
 
-(defcustom TeX-auto-default (car-safe TeX-auto-private)
+(defcustom TeX-auto-default (car-safe TeX-auto)
   "Default directory to place automatically generated TeX information."
   :group 'TeX-file
   :type 'directory)
@@ -4122,14 +4242,14 @@ If TEX is a directory, generate style files for all files in the directory."
 (defun TeX-auto-generate-global ()
   "Create global auto directory for global TeX macro definitions."
   (interactive)
-  (unless (file-directory-p TeX-auto-global)
-    (make-directory TeX-auto-global))
+  (unless (file-directory-p TeX-auto)
+    (make-directory TeX-auto))
   (let ((TeX-file-extensions '("cls" "sty"))
         (BibTeX-file-extensions nil)
         (TeX-Biber-file-extensions nil))
-    (mapc (lambda (macro) (TeX-auto-generate macro TeX-auto-global))
-          TeX-macro-global))
-  (byte-recompile-directory TeX-auto-global 0))
+    (mapc (lambda (macro) (TeX-auto-generate macro TeX-auto))
+          TeX-macro))
+  (byte-recompile-directory TeX-auto 0))
 
 (defun TeX-auto-store (file)
   "Extract information for AUCTeX from current buffer and store it in FILE."
@@ -4532,8 +4652,7 @@ If EXTENSIONS is not specified or nil, the value of
   "Return STRING without any trailing extension in EXTENSIONS.
 If NODIR is t, also remove directory part of STRING.
 If NODIR is `path', remove directory part of STRING if it is
-equal to the current directory or is a member of
-`TeX-macro-private' or `TeX-macro-global'.
+equal to the current directory or is a member of `TeX-macro'.
 If NOSTRIP is set, do not remove extension after all.
 STRING defaults to the name of the current buffer.
 EXTENSIONS defaults to `TeX-file-extensions'."
@@ -4551,8 +4670,7 @@ EXTENSIONS defaults to `TeX-file-extensions'."
          (dir (expand-file-name (or (file-name-directory strip) "./"))))
     (if (or (eq nodir t)
             (string-equal dir (expand-file-name "./"))
-            (member dir (mapcar #'file-name-as-directory TeX-macro-global))
-            (member dir (mapcar #'file-name-as-directory TeX-macro-private)))
+            (member dir (mapcar #'file-name-as-directory TeX-macro)))
         (file-name-nondirectory strip)
       strip)))
 
@@ -4616,7 +4734,7 @@ If optional argument EXTENSIONS is not set, use `TeX-file-extensions'"
   (when (null extensions)
     (setq extensions TeX-file-extensions))
   (when (null directories)
-    (setq directories (cons "./" (append TeX-macro-private TeX-macro-global))))
+    (setq directories (cons "./" TeX-macro)))
   (let (match
         (TeX-file-recurse (cond ((symbolp TeX-file-recurse)
                                  TeX-file-recurse)
@@ -4648,10 +4766,10 @@ If optional argument EXTENSIONS is not set, use `TeX-file-extensions'"
                                      match))))))))
     match))
 
-;; The variables `TeX-macro-private' and `TeX-macro-global' are not
-;; used for specifying the directories because the number of
-;; directories to be searched should be limited as much as possible
-;; and the TeX-macro-* variables are just too broad for this.
+;; The variable `TeX-macro' is not used for specifying the directories
+;; because the number of directories to be searched should be limited
+;; as much as possible and the `TeX-macro' variable is just too broad
+;; for this.
 (defvar TeX-search-files-type-alist
   '((texinputs "${TEXINPUTS}" ("tex/") TeX-file-extensions)
     (docs "${TEXDOCS}" ("doc/") TeX-doc-extensions)
@@ -5251,10 +5369,7 @@ Brace insertion is only done if point is in a math construct and
          (or TeX-customization-menu
              (setq TeX-customization-menu
                    (customize-menu-create 'AUCTeX "Customize AUCTeX")))))
-      :help "Make this menu a full-blown customization menu"])
-    ["Report AUCTeX Bug" TeX-submit-bug-report
-     :help ,(format "Problems with AUCTeX %s? Mail us!"
-                    AUCTeX-version)]))
+      :help "Make this menu a full-blown customization menu"])))
 
 
 ;;; Verbatim constructs
@@ -6344,59 +6459,60 @@ closing brace."
       (insert TeX-grcl))))
 
 ;;;###autoload
-(defun TeX-submit-bug-report ()
-  "Submit a bug report on AUCTeX via mail.
+(let ((AUCTeX-version "13.2.3") (AUCTeX-date "2023-12-07"))
+  (defun TeX-submit-bug-report ()
+    "Submit a bug report on AUCTeX via mail.
 
 Don't hesitate to report any problems or inaccurate documentation.
 
 If you don't have setup sending mail from Emacs, please copy the
 output buffer into your mail program, as it gives us important
 information about your AUCTeX version and AUCTeX configuration."
-  (interactive)
-  (require 'reporter)
-  (defvar reporter-prompt-for-summary-p)
-  (let ((reporter-prompt-for-summary-p "Bug report subject: "))
-    (reporter-submit-bug-report
-     "bug-auctex@gnu.org"
-     AUCTeX-version
-     (list 'AUCTeX-date
-           'window-system
-           'LaTeX-version
-           'TeX-style-path
-           'TeX-auto-save
-           'TeX-parse-self
-           'TeX-master
-           'TeX-command-list)
-     nil
-     ;; reporter adds too many new lines around salutation text, that we don't
-     ;; want, since it's itself a new line.
-     (lambda ()
-       (save-excursion
-         (goto-char (point-min))
-         (re-search-forward mail-header-separator)
-         (forward-char)
-         (delete-char 1)
-         (forward-char)
-         (delete-char 2)))
-     (propertize
-      "\n" 'display
-      (with-temp-buffer
-        (insert
-         "Remember to cover the basics, that is, what you expected to happen and
+    (interactive)
+    (require 'reporter)
+    (defvar reporter-prompt-for-summary-p)
+    (let ((reporter-prompt-for-summary-p "Bug report subject: "))
+      (reporter-submit-bug-report
+       "bug-auctex@gnu.org"
+       AUCTeX-version
+       (list AUCTeX-date
+             'window-system
+             'LaTeX-version
+             'TeX-style-path
+             'TeX-auto-save
+             'TeX-parse-self
+             'TeX-master
+             'TeX-command-list)
+       nil
+       ;; reporter adds too many new lines around salutation text, that we don't
+       ;; want, since it's itself a new line.
+       (lambda ()
+         (save-excursion
+           (goto-char (point-min))
+           (re-search-forward mail-header-separator)
+           (forward-char)
+           (delete-char 1)
+           (forward-char)
+           (delete-char 2)))
+       (propertize
+        "\n" 'display
+        (with-temp-buffer
+          (insert
+           "Remember to cover the basics, that is, what you expected to happen and
 what in fact did happen.
 
 Be sure to consult the FAQ section in the manual before submitting
 a bug report.  In addition check if the bug is reproducable with an
 up-to-date version of AUCTeX.  So please upgrade to the version
 available from ")
-        (insert-text-button
-         "https://www.gnu.org/software/auctex/"
-         'face 'link
-         'help-echo (concat "mouse-2, RET: Follow this link")
-         'action (lambda (_button)
-                   (browse-url "https://www.gnu.org/software/auctex/"))
-         'follow-link t)
-        (insert " if your
+          (insert-text-button
+           "https://www.gnu.org/software/auctex/"
+           'face 'link
+           'help-echo (concat "mouse-2, RET: Follow this link")
+           'action (lambda (_button)
+                     (browse-url "https://www.gnu.org/software/auctex/"))
+           'follow-link t)
+          (insert " if your
 installation is older than the one available from the web site.
 
 If the bug is triggered by a specific (La)TeX file, you should try
@@ -6405,16 +6521,16 @@ in your report.
 
 Your report will be posted for the auctex package at the GNU bug
 tracker.  Visit ")
-        (insert-text-button
-         "https://debbugs.gnu.org/cgi/pkgreport.cgi?pkg=auctex"
-         'face 'link
-         'help-echo (concat "mouse-2, RET: Follow this link")
-         'action (lambda (_button)
-                   (browse-url "https://debbugs.gnu.org/cgi/pkgreport.cgi?pkg=auctex"))
-         'follow-link t)
-        (insert "\nto browse existing AUCTeX bugs.
+          (insert-text-button
+           "https://debbugs.gnu.org/cgi/pkgreport.cgi?pkg=auctex"
+           'face 'link
+           'help-echo (concat "mouse-2, RET: Follow this link")
+           'action (lambda (_button)
+                     (browse-url "https://debbugs.gnu.org/cgi/pkgreport.cgi?pkg=auctex"))
+           'follow-link t)
+          (insert "\nto browse existing AUCTeX bugs.
 ------------------------------------------------------------------------\n\n")
-        (buffer-string))))))
+          (buffer-string)))))))
 
 
 ;;; Documentation

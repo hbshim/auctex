@@ -37,9 +37,11 @@
 
 ;;; Code:
 
+;; ::7UY74K4::
 (autoload 'TeX-load-hack
-  (expand-file-name "tex-site.el"
+  (expand-file-name "tex.el"
                     (file-name-directory load-file-name)))
 (TeX-load-hack)
 
+(provide 'auctex)
 ;;; auctex.el ends here

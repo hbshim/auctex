@@ -210,13 +210,13 @@ systems are determined by their values regardless of the kanji option."
              '((output-dvi "dviout"))
              TeX-view-program-selection))))
 
-(mapc (lambda (dir) (add-to-list 'TeX-macro-global dir t))
+(mapc (lambda (dir) (add-to-list 'TeX-macro dir t))
       (or (TeX-tree-expand
            '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST")
            "platex" '("/ptex/" "/pbibtex/bst/"))
           '("/usr/share/texmf/ptex/" "/usr/share/texmf/pbibtex/bst/")))
 
-(mapc (lambda (dir) (add-to-list 'TeX-macro-global dir t))
+(mapc (lambda (dir) (add-to-list 'TeX-macro dir t))
       (or (TeX-tree-expand
            '("$SYSTEXMF" "$TEXMFLOCAL" "$TEXMFMAIN" "$TEXMFDIST")
            "jlatex" '("/jtex/" "/jbibtex/bst/"))
